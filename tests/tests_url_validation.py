@@ -1,0 +1,140 @@
+import pytest
+from crawler.utils import validate_and_complete_url
+from crawler.crawler import Crawler
+
+class TestURLValidation:
+    """Test cases for URL validation and completion functionality"""
+    
+    def test_complete_urls_pass_through(self):
+        """Complete URLs should pass through unchanged"""
+        complete_urls = [
+            "https://example.com",
+            "http://example.com",
+            "https://www.example.com",
+            "http://www.example.com/path",
+            "https://subdomain.example.com"
+        ]
+        
+        for url in complete_urls:
+            result = validate_and_complete_url(url)
+            assert result == url
+    
+    def test_domain_only_gets_protocol_and_www(self):
+        """Domain-only URLs should get https:// and www. prefix"""
+        test_cases = [
+            ("example.com", "https://www.example.com"),
+            ("google.com", "https://www.google.com"),
+            ("sapo.pt", "https://www.sapo.pt"),
+            ("github.io", "https://www.github.io")
+        ]
+        
+        for input_url, expected in test_cases:
+            result = validate_and_complete_url(input_url)
+            assert result == expected
+    
+    def test_www_prefix_gets_protocol(self):
+        """URLs with www. but no protocol should get https://"""
+        test_cases = [
+            ("www.example.com", "https://www.example.com"),
+            ("www.sapo.pt", "https://www.sapo.pt"),
+            ("www.google.com/search", "https://www.google.com/search")
+        ]
+        
+        for input_url, expected in test_cases:
+            result = validate_and_complete_url(input_url)
+            assert result == expected
+    
+    def test_double_www_gets_cleaned(self):
+        """Double www. prefixes should be cleaned up"""
+        result = validate_and_complete_url("www.www.example.com")
+        assert result == "https://www.example.com"
+    
+    def test_subdomains_work(self):
+        """Subdomains should be properly handled"""
+        test_cases = [
+            ("api.example.com", "https://www.api.example.com"),
+            ("mail.google.com", "https://www.mail.google.com"),
+            ("https://api.github.com", "https://api.github.com")  # Already complete
+        ]
+        
+        for input_url, expected in test_cases:
+            result = validate_and_complete_url(input_url)
+            assert result == expected
+    
+    def test_paths_and_queries_preserved(self):
+        """Paths and query parameters should be preserved"""
+        test_cases = [
+            ("example.com/path", "https://www.example.com/path"),
+            ("example.com/path?query=1", "https://www.example.com/path?query=1"),
+            ("www.example.com/path#fragment", "https://www.example.com/path#fragment")
+        ]
+        
+        for input_url, expected in test_cases:
+            result = validate_and_complete_url(input_url)
+            assert result == expected
+    
+    def test_invalid_urls_raise_errors(self):
+        """Invalid URLs should raise ValueError"""
+        invalid_urls = [
+            "",                    # Empty string
+            "   ",                # Whitespace only
+            "not a url",          # No domain structure
+            "http://",            # No domain
+            "https://",           # No domain
+            "just text",          # Plain text
+            "ftp://example.com",  # Valid but gets converted to https
+        ]
+        
+        for invalid_url in invalid_urls[:6]:  # Skip FTP test for now
+            with pytest.raises(ValueError):
+                validate_and_complete_url(invalid_url)
+    
+    def test_crawler_accepts_incomplete_urls(self):
+        """Crawler should accept incomplete URLs and complete them"""
+        test_cases = [
+            "example.com",
+            "www.example.com", 
+            "sapo.pt"
+        ]
+        
+        for url in test_cases:
+            # Should not raise an exception
+            crawler = Crawler(url)
+            # The base_url should be properly formatted
+            assert crawler.base_url.startswith("https://")
+            assert "example.com" in crawler.base_url or "sapo.pt" in crawler.base_url
+    
+    def test_crawler_rejects_invalid_urls(self):
+        """Crawler should reject truly invalid URLs"""
+        invalid_urls = [
+            "",
+            "   ",
+            "not a url",
+            "just text"
+        ]
+        
+        for invalid_url in invalid_urls:
+            with pytest.raises(ValueError):
+                Crawler(invalid_url)
+    
+    def test_common_tlds_work(self):
+        """Common top-level domains should work"""
+        tlds = ["com", "org", "net", "edu", "gov", "pt", "uk", "de", "fr"]
+        
+        for tld in tlds:
+            url = f"example.{tld}"
+            result = validate_and_complete_url(url)
+            expected = f"https://www.example.{tld}"
+            assert result == expected
+    
+    def test_country_code_domains(self):
+        """Country code domains should work properly"""
+        test_cases = [
+            ("sapo.pt", "https://www.sapo.pt"),
+            ("bbc.co.uk", "https://www.bbc.co.uk"),
+            ("example.com.br", "https://www.example.com.br")
+        ]
+        
+        for input_url, expected in test_cases:
+            result = validate_and_complete_url(input_url)
+            assert result == expected

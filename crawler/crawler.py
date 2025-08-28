@@ -3,11 +3,17 @@ import time
 from collections import deque
 import aiohttp
 from bs4 import BeautifulSoup
-from .utils import is_same_domain, normalize_url, get_absolute_url
+from .utils import is_same_domain, normalize_url, get_absolute_url, validate_and_complete_url
 
 class Crawler:
     def __init__(self, base_url: str, max_concurrent: int = 10):
-        self.base_url = normalize_url(base_url)
+        # Validate and complete the URL before storing it
+        try:
+            completed_url = validate_and_complete_url(base_url)
+            self.base_url = normalize_url(completed_url)
+        except ValueError as e:
+            raise ValueError(f"Invalid base URL '{base_url}': {e}")
+            
         self.visited = set()
         self.pages_crawled = 0                                              # Count successfully crawled pages
         self.semaphore = asyncio.Semaphore(max_concurrent)                  # Limit concurrent requests

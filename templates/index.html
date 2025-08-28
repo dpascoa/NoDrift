@@ -447,12 +447,20 @@
                 }
                 
                 currentSessionId = data.session_id;
+                
+                // Show the completed URL to the user if it was modified
+                if (data.completed_url && data.completed_url !== url) {
+                    const completedMsg = `Crawling: ${data.completed_url}`;
+                    document.getElementById('currentUrl').textContent = completedMsg;
+                    document.getElementById('currentUrlSection').style.display = 'block';
+                }
+                
                 // Start polling for status updates
                 statusInterval = setInterval(checkStatus, 1000);
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('Failed to start crawling');
+                alert('Failed to start crawling. Please check the URL format.');
                 resetUI();
             });
         }

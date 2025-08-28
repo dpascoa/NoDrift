@@ -121,12 +121,24 @@ def start_crawl():
     if not base_url:
         return jsonify({"error": "URL is required"}), 400
     
+    # Validate and complete the URL
+    try:
+        from crawler.utils import validate_and_complete_url, normalize_url
+        completed_url = validate_and_complete_url(base_url)
+        normalized_url = normalize_url(completed_url)
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        return jsonify({"error": f"Invalid URL format: {str(e)}"}), 400
+    
     # Generate unique session ID
     session_id = str(uuid.uuid4())
     
     # Initialize session data
     crawl_sessions[session_id] = {
-        "base_url": base_url,
+        "base_url": normalized_url,
+        "original_url": base_url,
+        "completed_url": completed_url,
         "status": "initializing",
         "pages_crawled": 0,
         "elapsed_time": 0,
@@ -137,9 +149,13 @@ def start_crawl():
     }
     
     # Start crawling in background
-    run_crawler_async(base_url, session_id)
+    run_crawler_async(normalized_url, session_id)
     
-    return jsonify({"session_id": session_id})
+    return jsonify({
+        "session_id": session_id,
+        "completed_url": completed_url,
+        "message": f"Starting crawl of {completed_url}"
+    })
 
 @app.route('/api/crawl_status/<session_id>')
 def get_crawl_status(session_id):
