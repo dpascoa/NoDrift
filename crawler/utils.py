@@ -32,17 +32,27 @@ def validate_and_complete_url(url: str) -> str:
     # Parse to validate the URL structure and extract components
     parsed = urlparse(url)
 
+    # Clean up double www prefixes (e.g., www.www.example.com -> www.example.com)
+    netloc = parsed.netloc
+    # Replace multiple consecutive www. with a single www.
+    netloc = re.sub(r'^(www\.)+', 'www.', netloc)
+    # If it starts with 'www.' but is followed by another 'www.', remove the extra
+    if netloc.startswith('www.www.'):
+        netloc = netloc.replace('www.www.', 'www.', 1)
+
+    # Rebuild the URL with the cleaned netloc
+    url = parsed._replace(netloc=netloc).geturl()
+
     # Validate that we have a proper scheme and netloc (domain)
+    parsed = urlparse(url)
     if not parsed.scheme or not parsed.netloc:
         raise ValueError(f"Invalid URL format: {url}")
 
     # Simplified and more robust domain validation using a single regex.
-    # This regex checks for a valid domain name, including subdomains and TLDs.
-    # It accounts for hyphens and numbers correctly.
     domain_pattern = re.compile(
         r'^[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.([a-zA-Z]{2,}|[a-zA-Z]{2,}\.[a-zA-Z]{2,})'
     )
-    if not domain_pattern.match(parsed.netloc):
+    if not domain_pattern.match(parsed.netloc.replace('www.', '', 1)):
         raise ValueError(f"Invalid domain format: {parsed.netloc}")
 
     return url

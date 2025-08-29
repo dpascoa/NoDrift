@@ -1,91 +1,9 @@
-# Web Crawler Pro 🚀
+The test 🧪
+Create a Python app that can be run from the command line that will accept a base URL to crawl the site. For each page it finds, the script will print the URL of the page and all the URLs it finds on that page. The crawler will only process that single domain and not crawl URLs pointing to other domains or subdomains. Please employ patterns that will allow your crawler to run as quickly as possible, making full use any patterns that might boost the speed of the task, whilst not sacrificing accuracy and compute resources. Do not use tools like Scrapy or Playwright. You may use libraries for other purposes such as making HTTP requests, parsing HTML and other similar tasks.
 
-A modern, interactive web crawler with a beautiful real-time interface. Transform your command-line crawler into a sleek web application with live progress tracking, animated statistics, and responsive design.
+The objective
+This exercise is intended to allow you to demonstrate how you design software and write good quality code. We will look at how you have structured your code and how you test it. We want to understand how you have gone about solving this problem, what tools you used to become familiar with the subject matter and what tools you used to produce the code and verify your work. Please include detailed information about your IDE, the use of any interactive AI (such as Copilot) as well as any other AI tools that form part of your workflow.
 
-## ✨ Features
+You might also consider how you would extend your code to handle more complex scenarios, such a crawling multiple domains at once, thinking about how a command line interface might not be best suited for this purpose and what alternatives might be more suitable. Also, feel free to set the repo up as you would a production project.
 
-- **🎨 Modern UI**: Beautiful gradient design with glassmorphism effects
-- **⚡ Real-time Updates**: Live progress tracking and statistics
-- **📊 Interactive Dashboard**: Visual stats showing pages crawled, elapsed time, and URLs found
-- **📱 Responsive Design**: Works perfectly on desktop and mobile devices  
-- **🔄 Async Crawling**: Fast, concurrent web crawling with aiohttp
-- **🎯 Smart Filtering**: Only crawls same-domain links with URL normalization
-- **🌐 Flexible URL Input**: Automatically completes URLs - works with `example.com`, `www.example.com`, or `https://example.com`
-- **⏹️ Stop/Start Control**: Full control over crawling sessions
-- **📝 Detailed Logging**: See each page being crawled in real-time
-- **✅ URL Validation**: Intelligent URL validation and error handling
-
-## 🏗️ Project Structure
-
-```
-web-crawler-pro/
-├── app.py                    # Flask web server
-├── run_web.py               # Startup script
-├── main.py                  # Original CLI version
-├── requirements.txt         # Python dependencies
-├── README.md               # This file
-├── crawler/                # Crawler module
-│   ├── __init__.py
-│   ├── crawler.py          # Main crawler class
-│   └── utils.py            # Utility functions
-├── test/                   # Test files
-│   ├── test_crawler_async.py
-│   ├── test_crawler_parse_links.py
-│   ├── test_extra_coverage.py
-│   └── test_utils.py
-└── templates/              # HTML templates
-    └── index.html          # Web interface
-```
-
-## 🚀 Quick Start
-
-### 1. Install Dependencies
-
-```bash
-pip install -r requirements.txt
-```
-
-### 2. Run the Web Interface
-
-**Option A: Using the startup script (Recommended)**
-```bash
-python run_web.py
-```
-
-**Option B: Direct Flask run**
-```bash
-python app.py
-```
-
-### 3. Open Your Browser
-
-The application will automatically open at `http://localhost:5000`
-
-### 4. Start Crawling
-
-1. Enter a website URL in any of these formats:
-   - `sapo.pt` (will become `https://www.sapo.pt`)
-   - `www.sapo.pt` (will become `https://www.sapo.pt`) 
-   - `https://www.sapo.pt` (used as-is)
-2. Click "Start Crawling"
-3. Watch the real-time progress!
-
-## 🌐 URL Format Support
-
-The crawler intelligently handles various URL formats:
-
-| Input Format | Automatically Becomes | Notes |
-|---|---|---|
-| `sapo.pt` | `https://www.sapo.pt` | Adds protocol and www |
-| `www.sapo.pt` | `https://www.sapo.pt` | Adds protocol only |
-| `https://sapo.pt` | `https://sapo.pt` | Used as provided |
-| `http://www.sapo.pt` | `http://www.sapo.pt` | Respects HTTP if specified |
-
-### Invalid URL Examples
-- Empty strings
-- Plain text without domains  
-- Malformed URLs
-
-The system will show clear error messages for invalid inputs.
-
-## 🔧
+Extend this README to include a detailed discussion about your design decisions, the options you considered and the trade-offs you made during the development process, and aspects you might have addressed or refined if not constrained by time.

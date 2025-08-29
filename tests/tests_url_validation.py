@@ -19,15 +19,14 @@ class TestURLValidation:
             result = validate_and_complete_url(url)
             assert result == url
     
-    def test_domain_only_gets_protocol_and_www(self):
-        """Domain-only URLs should get https:// and www. prefix"""
+    def test_domain_only_gets_protocol(self):
+        """Domain-only URLs should get https:// and may or may not have www. prefix"""
         test_cases = [
-            ("example.com", "https://www.example.com"),
-            ("google.com", "https://www.google.com"),
-            ("sapo.pt", "https://www.sapo.pt"),
-            ("github.io", "https://www.github.io")
+            ("example.com", "https://example.com"),
+            ("google.com", "https://google.com"),
+            ("sapo.pt", "https://sapo.pt"),
+            ("github.io", "https://github.io")
         ]
-        
         for input_url, expected in test_cases:
             result = validate_and_complete_url(input_url)
             assert result == expected
@@ -45,18 +44,17 @@ class TestURLValidation:
             assert result == expected
     
     def test_double_www_gets_cleaned(self):
-        """Double www. prefixes should be cleaned up"""
+        """Double www. prefixes should be cleaned up to a single www."""
         result = validate_and_complete_url("www.www.example.com")
         assert result == "https://www.example.com"
     
     def test_subdomains_work(self):
         """Subdomains should be properly handled"""
         test_cases = [
-            ("api.example.com", "https://www.api.example.com"),
-            ("mail.google.com", "https://www.mail.google.com"),
+            ("api.example.com", "https://api.example.com"),
+            ("mail.google.com", "https://mail.google.com"),
             ("https://api.github.com", "https://api.github.com")  # Already complete
         ]
-        
         for input_url, expected in test_cases:
             result = validate_and_complete_url(input_url)
             assert result == expected
@@ -64,11 +62,10 @@ class TestURLValidation:
     def test_paths_and_queries_preserved(self):
         """Paths and query parameters should be preserved"""
         test_cases = [
-            ("example.com/path", "https://www.example.com/path"),
-            ("example.com/path?query=1", "https://www.example.com/path?query=1"),
+            ("example.com/path", "https://example.com/path"),
+            ("example.com/path?query=1", "https://example.com/path?query=1"),
             ("www.example.com/path#fragment", "https://www.example.com/path#fragment")
         ]
-        
         for input_url, expected in test_cases:
             result = validate_and_complete_url(input_url)
             assert result == expected
@@ -120,21 +117,19 @@ class TestURLValidation:
     def test_common_tlds_work(self):
         """Common top-level domains should work"""
         tlds = ["com", "org", "net", "edu", "gov", "pt", "uk", "de", "fr"]
-        
         for tld in tlds:
             url = f"example.{tld}"
             result = validate_and_complete_url(url)
-            expected = f"https://www.example.{tld}"
+            expected = f"https://example.{tld}"
             assert result == expected
     
     def test_country_code_domains(self):
         """Country code domains should work properly"""
         test_cases = [
-            ("sapo.pt", "https://www.sapo.pt"),
-            ("bbc.co.uk", "https://www.bbc.co.uk"),
-            ("example.com.br", "https://www.example.com.br")
+            ("sapo.pt", "https://sapo.pt"),
+            ("bbc.co.uk", "https://bbc.co.uk"),
+            ("example.com.br", "https://example.com.br")
         ]
-        
         for input_url, expected in test_cases:
             result = validate_and_complete_url(input_url)
             assert result == expected

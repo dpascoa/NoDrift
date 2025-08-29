@@ -119,12 +119,13 @@ class Crawler:
                 )
                 print(f"Log saved to: {log_file}")
 
-    async def fetch_and_process(self, url: str):
+    async def fetch_and_process(self, url: str, queue=None):
         """
         Fetch a URL, process its content, parse links, and add to queue.
 
         Args:
             url (str): The URL to fetch and process.
+            queue (deque, optional): The queue to add new links to. If None, uses self.to_visit.
         """
         async with self.semaphore:
             try:
@@ -151,10 +152,11 @@ class Crawler:
 
                     # Print and add new links to queue
                     print(f"\n\nPage: {url}")
+                    target_queue = queue if queue is not None else self.to_visit
                     for link in sorted(links):
                         print(f"  - {link}")
                         if link not in self.visited:
-                            self.to_visit.append(link)
+                            target_queue.append(link)
 
             except Exception as e:
                 self.error_count += 1

@@ -227,8 +227,10 @@ def start_crawl():
         completed_url = validate_and_complete_url(base_url)
         normalized_url = normalize_url(completed_url)
     except ValueError as e:
+        print(f"[ERROR] Invalid URL: {e}")
         return jsonify({"error": str(e)}), 400
     except Exception as e:
+        print(f"[ERROR] Invalid URL format: {e}")
         return jsonify({"error": f"Invalid URL format: {str(e)}"}), 400
 
     # Generate unique session ID

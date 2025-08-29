@@ -30,6 +30,14 @@ async def test_start_skips_already_visited(monkeypatch):
     """
     class FakeClientSession:
         async def close(self): pass
+        async def __aenter__(self): return self
+        async def __aexit__(self, exc_type, exc, tb): return False
+        def head(self, url, timeout=None, **kwargs):
+            class FakeHeadResponse:
+                status = 200
+                async def __aenter__(self): return self
+                async def __aexit__(self, exc_type, exc, tb): return False
+            return FakeHeadResponse()
 
     async def fake_fetch_and_process(self, url, queue):
         raise AssertionError("fetch_and_process should not be called")

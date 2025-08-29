@@ -101,7 +101,7 @@ async def test_start_uses_fake_client_and_closes_session(monkeypatch):
     """
     calls = {"count": 0}
 
-    async def fake_fetch_and_process(self, url, queue):
+    async def fake_fetch_and_process(self, url, queue=None):
         calls["count"] += 1
 
     import crawler.crawler as crawler_mod
@@ -109,6 +109,14 @@ async def test_start_uses_fake_client_and_closes_session(monkeypatch):
     class FakeClientSession:
         def __init__(self): self.closed = False
         async def close(self): self.closed = True
+        async def __aenter__(self): return self
+        async def __aexit__(self, exc_type, exc, tb): return False
+        def head(self, url, timeout=None, **kwargs):
+            class FakeHeadResponse:
+                status = 200
+                async def __aenter__(self): return self
+                async def __aexit__(self, exc_type, exc, tb): return False
+            return FakeHeadResponse()
 
     monkeypatch.setattr(crawler_mod.aiohttp, "ClientSession", FakeClientSession)
     monkeypatch.setattr(crawler_mod.Crawler, "fetch_and_process", fake_fetch_and_process, raising=False)

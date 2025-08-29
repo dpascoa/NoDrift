@@ -359,11 +359,10 @@
         </div>
     </div>
 
+    <div id="errorMessage"></div>
     <div id="currentCrawling">
         Currently crawling: <span id="currentUrl"></span>
     </div>
-
-    <div id="errorMessage"></div>
 
     <div id="viewTabs">
         <input type="radio" id="summaryView" name="viewType" class="view-toggle" checked />
@@ -405,13 +404,18 @@
         startBtn.addEventListener('click', async () => {
             const url = urlInput.value.trim();
             if (!url) {
-                alert('Please enter a URL');
+                errorMessageEl.textContent = 'Please enter a URL';
+                errorMessageEl.classList.add('show');
+                urlInput.value = '';
+                currentUrlEl.textContent = '';
+                statusMessageEl.textContent = 'Ready';
                 return;
             }
             startBtn.disabled = true;
             stopBtn.disabled = false;
             downloadBtn.disabled = true;
             errorMessageEl.textContent = '';
+            errorMessageEl.classList.remove('show');
             statusMessageEl.textContent = 'Initializing...';
 
             try {
@@ -425,10 +429,26 @@
                     sessionId = data.session_id;
                     startPolling();
                 } else {
-                    throw new Error(data.error);
+                    // Show error above crawling status and clear input
+                    errorMessageEl.textContent = data.error || 'Error starting crawl';
+                    errorMessageEl.classList.add('show');
+                    urlInput.value = '';
+                    currentUrlEl.textContent = '';
+                    pagesCrawledEl.textContent = '0';
+                    elapsedTimeEl.textContent = '0s';
+                    urlsFoundEl.textContent = '0';
+                    statusMessageEl.textContent = 'Invalid';
+                    resetButtons();
                 }
             } catch (err) {
                 errorMessageEl.textContent = `Error starting crawl: ${err.message}`;
+                errorMessageEl.classList.add('show');
+                urlInput.value = '';
+                currentUrlEl.textContent = '';
+                pagesCrawledEl.textContent = '0';
+                elapsedTimeEl.textContent = '0s';
+                urlsFoundEl.textContent = '0';
+                statusMessageEl.textContent = 'Invalid';
                 resetButtons();
             }
         });

@@ -9,6 +9,7 @@ import sys
 import webbrowser
 import time
 from threading import Timer
+from app import app
 
 
 def open_browser():
