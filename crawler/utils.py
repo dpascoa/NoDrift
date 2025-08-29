@@ -3,18 +3,19 @@ import re
 import aiohttp
 import asyncio
 
+
 def validate_and_complete_url(url: str) -> str:
     """
     Validates and completes a URL, adding protocol if missing.
 
     Args:
-        url: The URL to validate and complete
+        url (str): The URL to validate and complete.
 
     Returns:
-        A complete, valid URL with protocol
+        str: A complete, valid URL with protocol.
 
     Raises:
-        ValueError: If the URL is invalid or empty
+        ValueError: If the URL is invalid or empty.
     """
     if not url or not url.strip():
         raise ValueError("URL cannot be empty")
@@ -46,16 +47,17 @@ def validate_and_complete_url(url: str) -> str:
 
     return url
 
+
 async def verify_url_accessibility(url: str, timeout: int = 10) -> tuple[bool, str]:
     """
     Verify if a URL is accessible by making a HEAD request.
 
     Args:
-        url: The URL to verify
-        timeout: Request timeout in seconds
+        url (str): The URL to verify.
+        timeout (int, optional): Request timeout in seconds. Defaults to 10.
 
     Returns:
-        Tuple of (is_accessible, error_message)
+        tuple[bool, str]: (is_accessible, error_message)
     """
     try:
         async with aiohttp.ClientSession() as session:
@@ -77,8 +79,18 @@ async def verify_url_accessibility(url: str, timeout: int = 10) -> tuple[bool, s
     except Exception as e:
         return False, f"Connection error: {str(e)}"
 
-# Check if two URLs belong to the same domain
+
 def is_same_domain(base_url: str, link: str) -> bool:
+    """
+    Check if two URLs belong to the same domain.
+
+    Args:
+        base_url (str): The base URL.
+        link (str): The link to compare.
+
+    Returns:
+        bool: True if same domain, False otherwise.
+    """
     # Extracts just the domain (netloc) part of the URLs, e.g. "example.com"
     try:
         base_domain = urlparse(base_url).netloc
@@ -87,12 +99,31 @@ def is_same_domain(base_url: str, link: str) -> bool:
     except ValueError:
         return False
 
-# Normalize a URL into a standard format
+
 def normalize_url(url: str) -> str:
+    """
+    Normalize a URL into a standard format (scheme://netloc/path without trailing slash).
+
+    Args:
+        url (str): The URL to normalize.
+
+    Returns:
+        str: Normalized URL.
+    """
     # Parse the URL into components: scheme (http/https), domain, path, etc.
     parsed = urlparse(url)
     return parsed.scheme + "://" + parsed.netloc + parsed.path.rstrip('/')
 
-# Convert a relative URL into an absolute one
+
 def get_absolute_url(base: str, link: str) -> str:
+    """
+    Convert a relative URL into an absolute one using the base.
+
+    Args:
+        base (str): The base URL.
+        link (str): The (possibly relative) link.
+
+    Returns:
+        str: Absolute URL.
+    """
     return urljoin(base, link)
