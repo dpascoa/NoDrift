@@ -1,5 +1,8 @@
 # NoDrift — Fast, Domain‑Scoped Python Web Crawler
 
+<img width="986" height="666" alt="image" src="https://github.com/user-attachments/assets/1f655482-f18b-419a-99d6-21dd8afb8df5" />
+
+
 > A command‑line and (optional) web UI crawler that prints each page it visits and all links it finds, while **staying strictly within the starting domain (no subdomains)**. Built with asyncio + aiohttp and BeautifulSoup for speed and simplicity.
 
 ---
