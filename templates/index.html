@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Web Crawler Pro</title>
+    <title>NoDrift - Focused Web Crawler</title>
     <style>
         * {
             margin: 0;
@@ -213,6 +213,12 @@
             color: white;
         }
 
+        .status-invalid {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+            color: white;
+            animation: shake 0.5s ease-in-out;
+        }
+
         .progress-section {
             display: none;
             animation: fadeInUp 0.5s ease-out;
@@ -398,6 +404,12 @@
             }
         }
 
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
         /* Scrollbar styling */
         ::-webkit-scrollbar {
             width: 8px;
@@ -454,7 +466,8 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1 class="title">Web Crawler Pro</h1>
+            <h1 class="title">NoDrift</h1>
+            <p class="subtitle">Because this crawler doesn't drift to other domains. It stays focused.</p>
             <p class="subtitle">Advanced website crawling with real-time monitoring</p>
         </div>
 
@@ -470,6 +483,9 @@
                 </button>
                 <button id="stopBtn" class="btn btn-secondary" onclick="stopCrawl()" style="display: none;">
                     Stop Crawling
+                </button>
+                <button id="downloadBtn" class="btn btn-secondary" onclick="downloadLog()" style="display: none;">
+                    📄 Download Log
                 </button>
             </div>
 
@@ -487,7 +503,7 @@
                         <div id="totalFound" class="stat-number">0</div>
                         <div class="stat-label">URLs Found</div>
                     </div>
-                    <div class="stat-card">
+                    <div class="stat-card" style="display: flex; align-items: center; justify-content: center;">
                         <span id="crawlStatus" class="status status-initializing">Ready</span>
                     </div>
                 </div>
@@ -497,18 +513,19 @@
                     <div id="currentUrl" class="current-url-text"></div>
                 </div>
 
-                <div id="pagesList" class="pages-list" style="display: none;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
-                        <h3 style="margin: 0;">Crawled Pages:</h3>
-                        <div class="toggle-container">
-                            <label class="toggle-label">Summary View</label>
-                            <label class="switch">
-                                <input type="checkbox" id="detailToggle" onchange="toggleDetailView()">
-                                <span class="slider"></span>
-                            </label>
-                            <label class="toggle-label">Detailed View</label>
-                        </div>
+                <div id="viewToggleSection" style="display: none; margin-bottom: 20px;">
+                    <div class="toggle-container" style="justify-content: center;">
+                        <label class="toggle-label">Summary View</label>
+                        <label class="switch">
+                            <input type="checkbox" id="detailToggle" onchange="toggleDetailView()">
+                            <span class="slider"></span>
+                        </label>
+                        <label class="toggle-label">Detailed View</label>
                     </div>
+                </div>
+
+                <div id="pagesList" class="pages-list" style="display: none;">
+                    <h3 style="margin-bottom: 15px;">Crawled Pages:</h3>
                     <div id="pagesContent"></div>
                 </div>
             </div>
@@ -529,6 +546,9 @@
                 return;
             }
 
+            // Start new crawl - hide download button and reset everything
+            startNewCrawl();
+
             // Show progress section
             document.getElementById('progressSection').classList.add('show');
             
@@ -540,6 +560,7 @@
             updateStats(0, 0, 0, 'initializing');
             document.getElementById('pagesContent').innerHTML = '';
             document.getElementById('pagesList').style.display = 'none';
+            document.getElementById('viewToggleSection').style.display = 'none';
             document.getElementById('currentUrlSection').style.display = 'none';
             allPagesData = [];
 
@@ -622,13 +643,31 @@
                 if (data.pages && data.pages.length > 0) {
                     allPagesData = data.pages;
                     updatePagesList(data.pages);
+                    // Show toggle section when we have pages
+                    document.getElementById('viewToggleSection').style.display = 'block';
                 }
                 
                 // Check if crawl is finished
-                if (data.status === 'completed' || data.status === 'error' || data.status === 'stopped') {
+                if (data.status === 'completed' || data.status === 'error' || data.status === 'stopped' || data.status === 'invalid') {
                     clearInterval(statusInterval);
+                    
+                    // Show error message for invalid URLs
+                    if (data.status === 'invalid') {
+                        const errorMsg = data.error || 'Invalid URL - please check the URL and try again';
+                        alert(errorMsg);
+                    } else if (data.status === 'completed') {
+                        // Show download button for completed crawls
+                        document.getElementById('downloadBtn').style.display = 'inline-block';
+                    }
+                    
                     resetUI();
                 }
+
+        function downloadLog() {
+            if (currentSessionId) {
+                window.open(`/api/download_log/${currentSessionId}`, '_blank');
+            }
+        }
             })
             .catch(error => {
                 console.error('Error checking status:', error);
@@ -728,11 +767,19 @@
             document.getElementById('stopBtn').style.display = 'none';
             document.getElementById('detailToggle').checked = false;
             isDetailedView = false;
-            currentSessionId = null;
+            // Don't hide download button - let user download log after completion
+            // currentSessionId = null; // Keep session ID for log download
             if (statusInterval) {
                 clearInterval(statusInterval);
                 statusInterval = null;
             }
+        }
+
+        function startNewCrawl() {
+            // Reset everything for a completely new crawl
+            document.getElementById('downloadBtn').style.display = 'none';
+            currentSessionId = null;
+            resetUI();
         }
 
         // Allow Enter key to start crawl

@@ -1,8 +1,9 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, send_file
 from flask_cors import CORS
 import asyncio
 import threading
 import time
+import os
 from collections import deque
 import uuid
 import aiohttp
@@ -16,13 +17,34 @@ crawl_sessions = {}
 
 class WebCrawler(Crawler):
     def __init__(self, base_url: str, session_id: str, max_concurrent: int = 10):
-        super().__init__(base_url, max_concurrent)
+        super().__init__(base_url, max_concurrent, enable_logging=True)
         self.session_id = session_id
         self.status = "initializing"
         self.current_url = ""
         self.found_links = []
         
     async def start(self):
+        # First verify URL accessibility
+        try:
+            from crawler.utils import verify_url_accessibility
+            accessible, error_msg = await verify_url_accessibility(self.base_url)
+            if not accessible:
+                self.status = "invalid"
+                crawl_sessions[self.session_id]["status"] = "invalid"
+                crawl_sessions[self.session_id]["error"] = f"Invalid URL: {error_msg}"
+                if self.logger:
+                    self.logger.log_invalid_url(self.original_url, error_msg)
+                    self.logger.log_summary(0, 0, 1, "invalid")
+                return
+        except Exception as e:
+            self.status = "invalid"
+            crawl_sessions[self.session_id]["status"] = "invalid" 
+            crawl_sessions[self.session_id]["error"] = f"URL verification failed: {str(e)}"
+            if self.logger:
+                self.logger.log_invalid_url(self.original_url, str(e))
+                self.logger.log_summary(0, 0, 1, "invalid")
+            return
+        
         self.status = "running"
         crawl_sessions[self.session_id]["status"] = "running"
         
@@ -57,28 +79,54 @@ class WebCrawler(Crawler):
             self.status = "error"
             crawl_sessions[self.session_id]["status"] = "error"
             crawl_sessions[self.session_id]["error"] = str(e)
+            if self.logger:
+                self.logger.log_error("general", e)
         finally:
             if self.session:
                 await self.session.close()
             
             elapsed_time = time.perf_counter() - self.start_time
-            self.status = "completed"
+            self.status = "completed" if self.status == "running" else self.status
+            
+            # Log final summary
+            if self.logger:
+                final_status = self.status if self.status != "running" else "completed"
+                log_file = self.logger.log_summary(
+                    self.pages_crawled, 
+                    len(self.visited), 
+                    self.error_count, 
+                    final_status
+                )
+                crawl_sessions[self.session_id]["log_file"] = log_file
+            
             crawl_sessions[self.session_id].update({
-                "status": "completed",
+                "status": self.status,
                 "elapsed_time": elapsed_time,
-                "pages_crawled": self.pages_crawled
+                "pages_crawled": self.pages_crawled,
+                "error_count": self.error_count
             })
 
     async def fetch_and_process(self, url: str, queue: deque):
         async with self.semaphore:
             try:
                 async with self.session.get(url, timeout=10) as response:
-                    if response.status != 200 or 'text/html' not in response.content_type:
+                    if response.status != 200:
+                        if self.logger:
+                            self.logger.log_page_skipped(url, "Non-200 status", response.status)
+                        return
+                        
+                    if 'text/html' not in response.content_type:
+                        if self.logger:
+                            self.logger.log_page_skipped(url, "Non-HTML content", response.status)
                         return
                     
                     html = await response.text()
                     self.pages_crawled += 1
                     links = self.parse_links(url, html)
+                    
+                    # Log the crawled page
+                    if self.logger:
+                        self.logger.log_page_crawled(url, links, response.status)
                     
                     # Store found links for this page
                     page_links = []
@@ -95,6 +143,9 @@ class WebCrawler(Crawler):
                     })
 
             except Exception as e:
+                self.error_count += 1
+                if self.logger:
+                    self.logger.log_error(url, e)
                 print(f"Error fetching {url}: {e}")
 
 def run_crawler_async(base_url, session_id):
@@ -102,8 +153,16 @@ def run_crawler_async(base_url, session_id):
     def run():
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-        crawler = WebCrawler(base_url, session_id)
-        loop.run_until_complete(crawler.start())
+        try:
+            crawler = WebCrawler(base_url, session_id)
+            loop.run_until_complete(crawler.start())
+        except ValueError as e:
+            # Handle invalid URL during crawler initialization
+            crawl_sessions[session_id]["status"] = "invalid"
+            crawl_sessions[session_id]["error"] = str(e)
+        except Exception as e:
+            crawl_sessions[session_id]["status"] = "error" 
+            crawl_sessions[session_id]["error"] = str(e)
     
     thread = threading.Thread(target=run)
     thread.daemon = True
@@ -144,8 +203,10 @@ def start_crawl():
         "elapsed_time": 0,
         "current_url": "",
         "total_found": 0,
+        "error_count": 0,
         "pages": [],
-        "start_time": time.time()
+        "start_time": time.time(),
+        "log_file": None
     }
     
     # Start crawling in background
@@ -171,6 +232,20 @@ def stop_crawl(session_id):
     
     crawl_sessions[session_id]["status"] = "stopped"
     return jsonify({"message": "Crawl stopped"})
+
+@app.route('/api/download_log/<session_id>')
+def download_log(session_id):
+    """Download the log file for a completed crawl session"""
+    if session_id not in crawl_sessions:
+        return jsonify({"error": "Session not found"}), 404
+    
+    session = crawl_sessions[session_id]
+    log_file = session.get("log_file")
+    
+    if not log_file or not os.path.exists(log_file):
+        return jsonify({"error": "Log file not found"}), 404
+    
+    return send_file(log_file, as_attachment=True)
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
