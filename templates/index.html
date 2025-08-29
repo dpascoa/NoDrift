@@ -251,6 +251,91 @@
             opacity: 0.9;
         }
 
+        .page-links-detailed {
+            margin-top: 10px;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 6px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .page-link-item {
+            padding: 4px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            word-break: break-all;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .page-link-item:last-child {
+            border-bottom: none;
+        }
+
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .toggle-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        /* Toggle Switch Styles */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 30px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.3);
+            transition: 0.4s;
+            border-radius: 30px;
+            border: 2px solid rgba(255, 255, 255, 0.4);
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 2px;
+            bottom: 2px;
+            background-color: white;
+            transition: 0.4s;
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        input:checked + .slider {
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            border-color: #3498db;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(30px);
+        }
+
+        .slider:hover {
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+        }
+
         .loading-spinner {
             display: inline-block;
             width: 20px;
@@ -348,6 +433,21 @@
             .stats-grid {
                 grid-template-columns: 1fr;
             }
+
+            .toggle-container {
+                flex-direction: column;
+                gap: 8px;
+                text-align: center;
+            }
+
+            .page-links-detailed {
+                max-height: 150px;
+            }
+
+            .page-link-item {
+                font-size: 0.8rem;
+                padding: 3px 0;
+            }
         }
     </style>
 </head>
@@ -398,7 +498,17 @@
                 </div>
 
                 <div id="pagesList" class="pages-list" style="display: none;">
-                    <h3 style="margin-bottom: 15px;">Crawled Pages:</h3>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
+                        <h3 style="margin: 0;">Crawled Pages:</h3>
+                        <div class="toggle-container">
+                            <label class="toggle-label">Summary View</label>
+                            <label class="switch">
+                                <input type="checkbox" id="detailToggle" onchange="toggleDetailView()">
+                                <span class="slider"></span>
+                            </label>
+                            <label class="toggle-label">Detailed View</label>
+                        </div>
+                    </div>
                     <div id="pagesContent"></div>
                 </div>
             </div>
@@ -408,6 +518,8 @@
     <script>
         let currentSessionId = null;
         let statusInterval = null;
+        let isDetailedView = false;
+        let allPagesData = [];
 
         function startCrawl() {
             const url = document.getElementById('urlInput').value.trim();
@@ -429,6 +541,7 @@
             document.getElementById('pagesContent').innerHTML = '';
             document.getElementById('pagesList').style.display = 'none';
             document.getElementById('currentUrlSection').style.display = 'none';
+            allPagesData = [];
 
             // Start crawl
             fetch('/api/start_crawl', {
@@ -507,6 +620,7 @@
                 
                 // Update pages list
                 if (data.pages && data.pages.length > 0) {
+                    allPagesData = data.pages;
                     updatePagesList(data.pages);
                 }
                 
@@ -548,10 +662,13 @@
             newPages.forEach(page => {
                 const pageEl = document.createElement('div');
                 pageEl.className = 'page-item';
-                pageEl.innerHTML = `
-                    <div class="page-url">${page.url}</div>
-                    <div class="page-links">Found ${page.links.length} links</div>
-                `;
+                
+                if (isDetailedView) {
+                    pageEl.innerHTML = createDetailedPageHTML(page);
+                } else {
+                    pageEl.innerHTML = createSummaryPageHTML(page);
+                }
+                
                 contentEl.appendChild(pageEl);
             });
             
@@ -559,9 +676,58 @@
             listEl.scrollTop = listEl.scrollHeight;
         }
 
+        function createSummaryPageHTML(page) {
+            return `
+                <div class="page-url">${page.url}</div>
+                <div class="page-links">Found ${page.links.length} links</div>
+            `;
+        }
+
+        function createDetailedPageHTML(page) {
+            const linksHTML = page.links.length > 0 
+                ? `<div class="page-links-detailed">
+                     ${page.links.map(link => `<div class="page-link-item">→ ${link}</div>`).join('')}
+                   </div>`
+                : '<div class="page-links">No links found</div>';
+            
+            return `
+                <div class="page-url">${page.url}</div>
+                <div class="page-links">Found ${page.links.length} links</div>
+                ${linksHTML}
+            `;
+        }
+
+        function toggleDetailView() {
+            const toggle = document.getElementById('detailToggle');
+            isDetailedView = toggle.checked;
+            
+            // Re-render all pages with the new view mode
+            const contentEl = document.getElementById('pagesContent');
+            contentEl.innerHTML = '';
+            
+            allPagesData.forEach(page => {
+                const pageEl = document.createElement('div');
+                pageEl.className = 'page-item';
+                
+                if (isDetailedView) {
+                    pageEl.innerHTML = createDetailedPageHTML(page);
+                } else {
+                    pageEl.innerHTML = createSummaryPageHTML(page);
+                }
+                
+                contentEl.appendChild(pageEl);
+            });
+            
+            // Auto-scroll to bottom
+            const listEl = document.getElementById('pagesList');
+            listEl.scrollTop = listEl.scrollHeight;
+        }
+
         function resetUI() {
             document.getElementById('startBtn').disabled = false;
             document.getElementById('stopBtn').style.display = 'none';
+            document.getElementById('detailToggle').checked = false;
+            isDetailedView = false;
             currentSessionId = null;
             if (statusInterval) {
                 clearInterval(statusInterval);
