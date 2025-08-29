@@ -238,13 +238,13 @@
 
         /* Crawled Pages List */
         #crawledPages {
-            display: none;
             background: var(--card-bg);
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.05);
             padding: 24px;
             border-radius: var(--border-radius);
             box-shadow: var(--shadow-sm);
+            margin-bottom: 20px;
         }
 
         #crawledPages h3 {
@@ -273,6 +273,13 @@
         #crawledPages strong {
             color: var(--accent-a);
             font-weight: 600;
+        }
+
+        #crawledPages small {
+            font-size: 0.85rem;
+            opacity: 0.8;
+            display: block;
+            margin: 4px 0;
         }
 
         #crawledPages ul ul {
@@ -374,6 +381,7 @@
     </div>
 
     <script>
+        // DOM elements
         const urlInput = document.getElementById('urlInput');
         const startBtn = document.getElementById('startCrawl');
         const stopBtn = document.getElementById('stopCrawl');
@@ -391,18 +399,19 @@
 
         let sessionId = null;
         let pollInterval = null;
+        let dataCache = null; // Cache the latest crawl data for rendering
 
-        // Start crawl
+        // Event listener for starting the crawl
         startBtn.addEventListener('click', async () => {
             const url = urlInput.value.trim();
             if (!url) {
-                showError('Please enter a valid URL.');
+                alert('Please enter a URL');
                 return;
             }
             startBtn.disabled = true;
             stopBtn.disabled = false;
             downloadBtn.disabled = true;
-            clearError();
+            errorMessageEl.textContent = '';
             statusMessageEl.textContent = 'Initializing...';
 
             try {
@@ -416,101 +425,123 @@
                     sessionId = data.session_id;
                     startPolling();
                 } else {
-                    throw new Error(data.error || 'Unknown error');
+                    throw new Error(data.error);
                 }
             } catch (err) {
-                showError(`Error: ${err.message}`);
+                errorMessageEl.textContent = `Error starting crawl: ${err.message}`;
                 resetButtons();
             }
         });
 
-        // Stop crawl
+        // Event listener for stopping the crawl
         stopBtn.addEventListener('click', async () => {
             if (!sessionId) return;
             stopBtn.disabled = true;
             try {
-                await fetch(`/api/stop_crawl/${sessionId}`, { method: 'POST' });
+                const response = await fetch(`/api/stop_crawl/${sessionId}`, { method: 'POST' });
+                if (!response.ok) throw new Error('Failed to stop crawl');
             } catch (err) {
-                showError(`Stop failed: ${err.message}`);
+                errorMessageEl.textContent = `Error stopping crawl: ${err.message}`;
             }
         });
 
-        // Download log
+        // Event listener for downloading the log
         downloadBtn.addEventListener('click', () => {
             if (!sessionId) return;
             window.location.href = `/api/download_log/${sessionId}`;
         });
 
-        // View switching
+        // View switching: update displayed content
         summaryRadio.addEventListener('change', () => {
-            if (summaryRadio.checked) crawledPagesDiv.style.display = 'none';
+            if (dataCache) renderPagesList(dataCache, false);
         });
         detailedRadio.addEventListener('change', () => {
-            if (detailedRadio.checked) crawledPagesDiv.style.display = 'block';
+            if (dataCache) renderPagesList(dataCache, true);
         });
 
-        // Polling
+        // Function to start polling the status API
         function startPolling() {
             if (pollInterval) clearInterval(pollInterval);
             pollInterval = setInterval(async () => {
                 if (!sessionId) return;
                 try {
                     const response = await fetch(`/api/crawl_status/${sessionId}`);
-                    if (!response.ok) throw new Error('Fetch failed');
+                    if (!response.ok) throw new Error('Failed to fetch status');
                     const data = await response.json();
                     updateUI(data);
-
+                    // Stop polling if crawl is done
                     if (['completed', 'stopped', 'error', 'invalid'].includes(data.status)) {
                         clearInterval(pollInterval);
                         pollInterval = null;
                         stopBtn.disabled = true;
                         startBtn.disabled = false;
-                        if (data.log_file) downloadBtn.disabled = false;
-                        if (data.error) showError(data.error);
+                        if (data.log_file) {
+                            downloadBtn.disabled = false;
+                        }
+                        if (data.error) {
+                            errorMessageEl.textContent = data.error;
+                        }
                     }
                 } catch (err) {
-                    showError(`Connection error: ${err.message}`);
+                    errorMessageEl.textContent = `Error polling status: ${err.message}`;
                     clearInterval(pollInterval);
                 }
             }, 1000);
         }
 
-        // Update UI
+        // Update UI with data
         function updateUI(data) {
+            dataCache = data; // Cache for rendering
+
             pagesCrawledEl.textContent = data.pages_crawled || 0;
             elapsedTimeEl.textContent = `${Math.floor(data.elapsed_time || 0)}s`;
             urlsFoundEl.textContent = data.total_found || 0;
-            statusMessageEl.textContent = (data.status || 'unknown')
-                .replace(/^\w/, c => c.toUpperCase());
+            statusMessageEl.textContent = data.status ? data.status.charAt(0).toUpperCase() + data.status.slice(1) : 'Unknown';
             currentUrlEl.textContent = data.current_url || '';
 
-            if (data.pages && detailedRadio.checked) {
-                pagesListEl.innerHTML = '';
-                if (data.pages.length === 0) {
-                    pagesListEl.innerHTML = '<li class="empty-state">No pages crawled yet.</li>';
-                } else {
-                    data.pages.forEach(page => {
-                        const li = document.createElement('li');
-                        li.innerHTML = `
-                            <strong>${page.url}</strong>
-                            <ul>${page.links.map(link => `<li>${link}</li>`).join('')}</ul>
-                        `;
-                        pagesListEl.appendChild(li);
-                    });
-                }
+            // Update list if pages exist
+            if (data.pages && data.pages.length > 0) {
+                crawledPagesDiv.style.display = 'block'; // Ensure section is visible
+                const isDetailedView = detailedRadio.checked;
+                renderPagesList(data, isDetailedView);
+            } else {
+                pagesListEl.innerHTML = '<li class="empty-state">No pages crawled yet.</li>';
             }
         }
 
-        // Error handling
-        function showError(msg) {
-            errorMessageEl.textContent = msg;
-            errorMessageEl.classList.add('show');
+        // Render the list of crawled pages based on view mode
+        function renderPagesList(data, showDetails = false) {
+            const pages = data.pages || [];
+            if (pages.length === 0) {
+                pagesListEl.innerHTML = '<li class="empty-state">No pages crawled yet.</li>';
+                return;
+            }
+
+            const reversedPages = [...pages].reverse();
+            pagesListEl.innerHTML = '';
+
+            reversedPages.forEach(page => {
+                const li = document.createElement('li');
+                const linkCount = (page.links && page.links.length) || 0;
+
+                if (showDetails && linkCount > 0) {
+                    const linksHtml = page.links.map(link => `<li>${link}</li>`).join('');
+                    li.innerHTML = `
+                        <strong>${page.url}</strong>
+                        <small>Found ${linkCount} link(s)</small>
+                        <ul>${linksHtml}</ul>
+                    `;
+                } else {
+                    li.innerHTML = `
+                        <strong>${page.url}</strong>
+                        <small>Found ${linkCount} link(s)</small>
+                    `;
+                }
+                pagesListEl.appendChild(li);
+            });
         }
 
-        function clearError() {
-            errorMessageEl.classList.remove('show');
-        }
-
+        // Reset buttons on error or reset
         function resetButtons() {
             startBtn.disabled = false;
             stopBtn.disabled = true;
