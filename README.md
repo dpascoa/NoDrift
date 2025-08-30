@@ -1,9 +1,9 @@
 # NoDrift — Fast, Domain‑Scoped Python Web Crawler
+> A command‑line and (optional) web UI crawler that prints each page it visits and all links it finds, while **staying strictly within the starting domain (no subdomains)**. Built with asyncio + aiohttp and BeautifulSoup for speed and simplicity.
 
 <img width="986" height="666" alt="image" src="https://github.com/user-attachments/assets/1f655482-f18b-419a-99d6-21dd8afb8df5" />
 
 
-> A command‑line and (optional) web UI crawler that prints each page it visits and all links it finds, while **staying strictly within the starting domain (no subdomains)**. Built with asyncio + aiohttp and BeautifulSoup for speed and simplicity.
 
 ---
 
@@ -21,7 +21,7 @@
 
 ## 🧰 Requirements
 
-- Python **3.10+** (project tested with 3.11/3.12)
+- Python **3.10+** (project tested with 3.12)
 - pip / venv (recommended)
 
 Project dependencies are listed in `requirements.txt`:
@@ -201,7 +201,7 @@ NoDrift/
   - Component tests for link parsing with controlled HTML.
   - Async tests for crawler start/fetch logic using **mocks/fakes** to avoid real HTTP.
 - Learned and used **pytest monkeypatch** to safely override environment/attributes within test scopes — automatically undone after each test.
-- After adding Web UI & logging features, **additional tests** were created (some with assistance from AI tools) to cover:
+- After adding Web UI & logging features, **additional tests** were created (with assistance from AI tools) to cover:
   - Logger edge cases and file errors
   - Flask API endpoint behavior (`app.py`)
   - Stopping & resuming sessions
