@@ -216,11 +216,32 @@ NoDrift/
   Used ChatGPT, Grok (xAI), Gemini and Claude to brainstorm strategies, discuss trade‑offs (sync vs. async, malformed HTML handling), and suggest missing tests.  
   Additionally used GitHub Copilot selectively near the end to scaffold a few **test cases** for the new UI/logging code. All AI suggestions were **reviewed, adapted, and validated** via tests before inclusion.
 
+### Key Learnings During Development
+
+- **Constant-time operations (O(1))**
+Gained a deeper understanding of time complexity. An O(1) operation takes roughly the same amount of time regardless of input size, which is critical for data structures like sets and deques.
+
+- **Deques & BFS traversal**
+Learned that a `deque` (double-ended queue) allows efficient O(1) insertion/removal from both ends, making it ideal for implementing Breadth-First Search (BFS). In BFS, nodes are explored level by level using a queue: enqueue new items at the back, dequeue from the front.
+
+- **Asynchronous programming**
+Extended my knowledge of `asyncio` and how asynchronous I/O works in practice — enabling the crawler to fetch multiple pages concurrently instead of waiting for one request to finish before starting another.
+
+- **Mocks & fakes for testing**
+Instead of relying on real servers, I learned to use mock objects (or “fakes”) to simulate external dependencies during tests. This makes tests faster, safer, and more reliable.
+
+- **Pytest monkeypatch**
+Discovered how `pytest`’s monkeypatch fixture provides a clean, temporary way to override environment variables, attributes, or dictionary values in tests. Best of all, changes are automatically undone after each test, preventing side effects.
+
+- **URL normalization for robustness**
+While building the Web UI, I implemented logic to normalize different URL formats — e.g., `zego.com`, `www.zego.com`, or `https://www.zego.com` — so that they are all resolved to a proper, crawlable absolute URL.
+
 ### If given more time
-- **Performance:** add a semaphore to cap concurrency per host; implement polite crawling (`robots.txt`, delay/backoff); streaming parse for large pages.
-- **Extensibility:** pluggable outputs (JSON/CSV/DB), configuration file & CLI flags (max depth, parallelism), multi‑domain crawl controller & dashboard.
-- **Robustness:** improved encoding detection; retries with exponential backoff & jitter.
-- **CI/CD:** GitHub Actions for linting, tests, and coverage badges; split dev dependencies (`requirements-dev.txt`).
+- **Performance:** Introduce a semaphore to cap concurrency per host, support polite crawling (`robots.txt`, configurable delays, backoff strategies), and explore streaming parsers for very large pages.
+- **Extensibility:** Add pluggable output formats (JSON, CSV, database), a configuration file and CLI flags for crawl depth/parallelism, and a more advanced multi-domain crawl controller with a dashboard view.
+- **Web UI enhancements:** Enable crawling **multiple domains in parallel** from the UI, provide a toggle to run the same crawl in both synchronous and asynchronous modes (with runtime comparison), and add AI/ML-powered content summarization for each page — from concise one-line overviews to more detailed summaries.
+- **Robustness:** Improve encoding detection, add retries with exponential backoff and jitter, and strengthen error handling for edge cases.
+- **CI/CD:** Set up GitHub Actions pipelines for linting, tests, and coverage reporting; split development dependencies into a dedicated `requirements-dev.txt` for cleaner project management.
 
 ---
 
