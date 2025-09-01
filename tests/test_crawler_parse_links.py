@@ -16,31 +16,32 @@ HTML_SAMPLE = """
 </body></html>
 """
 
+ # Test case 1:
 def test_init_normalizes_base_url():
-    """
-    Test case 1: Check that the crawler's base URL is always stored in a clean, consistent format.
-    The trailing slash is removed for consistency.
-    """
-    c = Crawler("https://example.com/")
-    assert c.base_url == "https://example.com"
+  """
+  Checks that the crawler's base URL is normalized (trailing slash removed).
+  """
+  c = Crawler("https://example.com/")
+  assert c.base_url == "https://example.com"
 
+ # Test case 2:
 def test_parse_links_filters_and_normalizes():
-    """
-    Test case 2: Verify that the `parse_links` method correctly finds, filters, and normalizes URLs.
-    It should only return valid links on the same domain.
-    """
-    c = Crawler("https://example.com")
-    links = c.parse_links("https://example.com", HTML_SAMPLE)
-    # Should include about/contact and a normalized root for the fragment link
-    assert set(links) == {
-        "https://example.com/about",
-        "https://example.com/contact",
-        "https://example.com",
-    }
+  """
+  Checks that parse_links finds, filters, and normalizes URLs on the same domain.
+  """
+  c = Crawler("https://example.com")
+  links = c.parse_links("https://example.com", HTML_SAMPLE)
+  # Should include about/contact and a normalized root for the fragment link
+  assert set(links) == {
+    "https://example.com/about",
+    "https://example.com/contact",
+    "https://example.com",
+  }
 
+ # Test case 3:
 def test_parse_links_deduplicates_and_same_domain_only():
     """
-    Test case 3: Ensure `parse_links` handles duplicate links and only extracts links from the same domain.
+    Ensure `parse_links` handles duplicate links and only extracts links from the same domain.
     """
     c = Crawler("https://example.com")
     html = '<a href="/a"></a><a href="https://example.com/a/"></a><a href="https://other.com/a"></a>'

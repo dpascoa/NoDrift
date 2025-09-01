@@ -5,8 +5,11 @@ from crawler.crawler import Crawler
 class TestURLValidation:
     """Test cases for URL validation and completion functionality"""
     
+    # Test case 1:
     def test_complete_urls_pass_through(self):
-        """Complete URLs should pass through unchanged"""
+        """
+        Checks that complete URLs pass through unchanged.
+        """
         complete_urls = [
             "https://example.com",
             "http://example.com",
@@ -19,8 +22,11 @@ class TestURLValidation:
             result = validate_and_complete_url(url)
             assert result == url
     
+    # Test case 2:
     def test_domain_only_gets_protocol(self):
-        """Domain-only URLs should get https:// and may or may not have www. prefix"""
+        """
+        Checks that domain-only URLs get https:// protocol added.
+        """
         test_cases = [
             ("example.com", "https://example.com"),
             ("google.com", "https://google.com"),
@@ -31,8 +37,11 @@ class TestURLValidation:
             result = validate_and_complete_url(input_url)
             assert result == expected
     
+    # Test case 3:
     def test_www_prefix_gets_protocol(self):
-        """URLs with www. but no protocol should get https://"""
+        """
+        Checks that URLs with www. but no protocol get https:// added.
+        """
         test_cases = [
             ("www.example.com", "https://www.example.com"),
             ("www.sapo.pt", "https://www.sapo.pt"),
@@ -43,13 +52,19 @@ class TestURLValidation:
             result = validate_and_complete_url(input_url)
             assert result == expected
     
+    # Test case 4:
     def test_double_www_gets_cleaned(self):
-        """Double www. prefixes should be cleaned up to a single www."""
+        """
+        Checks that double www. prefixes are cleaned to a single www.
+        """
         result = validate_and_complete_url("www.www.example.com")
         assert result == "https://www.example.com"
     
+    # Test case 5:
     def test_subdomains_work(self):
-        """Subdomains should be properly handled"""
+        """
+        Checks that subdomains are properly handled.
+        """
         test_cases = [
             ("api.example.com", "https://api.example.com"),
             ("mail.google.com", "https://mail.google.com"),
@@ -59,8 +74,11 @@ class TestURLValidation:
             result = validate_and_complete_url(input_url)
             assert result == expected
     
+    # Test case 6:
     def test_paths_and_queries_preserved(self):
-        """Paths and query parameters should be preserved"""
+        """
+        Checks that paths and query parameters are preserved.
+        """
         test_cases = [
             ("example.com/path", "https://example.com/path"),
             ("example.com/path?query=1", "https://example.com/path?query=1"),
@@ -70,8 +88,11 @@ class TestURLValidation:
             result = validate_and_complete_url(input_url)
             assert result == expected
     
+    # Test case 7:
     def test_invalid_urls_raise_errors(self):
-        """Invalid URLs should raise ValueError"""
+        """
+        Checks that invalid URLs raise ValueError.
+        """
         invalid_urls = [
             "",                    # Empty string
             "   ",                # Whitespace only
@@ -86,8 +107,11 @@ class TestURLValidation:
             with pytest.raises(ValueError):
                 validate_and_complete_url(invalid_url)
     
+    # Test case 8:
     def test_crawler_accepts_incomplete_urls(self):
-        """Crawler should accept incomplete URLs and complete them"""
+        """
+        Checks that the crawler accepts incomplete URLs and completes them.
+        """
         test_cases = [
             "example.com",
             "www.example.com", 
@@ -101,8 +125,11 @@ class TestURLValidation:
             assert crawler.base_url.startswith("https://")
             assert "example.com" in crawler.base_url or "sapo.pt" in crawler.base_url
     
+    # Test case 9:
     def test_crawler_rejects_invalid_urls(self):
-        """Crawler should reject truly invalid URLs"""
+        """
+        Checks that the crawler rejects truly invalid URLs.
+        """
         invalid_urls = [
             "",
             "   ",
@@ -114,8 +141,11 @@ class TestURLValidation:
             with pytest.raises(ValueError):
                 Crawler(invalid_url)
     
+    # Test case 10:
     def test_common_tlds_work(self):
-        """Common top-level domains should work"""
+        """
+        Checks that common top-level domains work.
+        """
         tlds = ["com", "org", "net", "edu", "gov", "pt", "uk", "de", "fr"]
         for tld in tlds:
             url = f"example.{tld}"
@@ -123,8 +153,11 @@ class TestURLValidation:
             expected = f"https://example.{tld}"
             assert result == expected
     
+    # Test case 11:
     def test_country_code_domains(self):
-        """Country code domains should work properly"""
+        """
+        Checks that country code domains work properly.
+        """
         test_cases = [
             ("sapo.pt", "https://sapo.pt"),
             ("bbc.co.uk", "https://bbc.co.uk"),

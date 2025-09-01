@@ -11,14 +11,24 @@ class TestCrawlerLogger(unittest.TestCase):
         if os.path.exists(self.log_file):
             os.remove(self.log_file)
 
+    # Test case 1:
     def test_log_message(self):
+        """
+        Checks that a message is logged and appears in the log file.
+        """
+        # Log a message and check file contents
         # Use an existing logger method to log a message
         self.logger.log_page_crawled("Test message", [], 200)
         with open(self.logger.log_filename, "r") as f:
             content = f.read()
         self.assertIn("Test message", content)
 
+    # Test case 2:
     def test_log_file_error(self):
+        """
+        Checks that logger handles file errors gracefully when writing to log.
+        """
+        # Change file permissions and test error handling
         # Ensure log file exists before changing permissions
         with open(self.logger.log_filename, "w") as f:
             f.write("")

@@ -41,40 +41,47 @@ class FakeSession:
         self.closed = True
 
 @pytest.mark.asyncio
+# Test case 1:
 async def test_fetch_and_process_skips_non_200():
     """
-    Test case 1: Ensures the crawler ignores pages with a non-200 status code.
-    Here, we simulate a 404 "Not Found" error.
+    Ensures the crawler ignores pages with a non-200 status code.
+    Simulates a 404 "Not Found" error.
     """
+    # Setup crawler and fake session
     c = Crawler("https://example.com")
     c.session = FakeSession(FakeResponse(status=404, content_type='text/html', body='ignored'))
     from collections import deque
     dq = deque()
+    # Run fetch_and_process and check results
     await c.fetch_and_process("https://example.com", dq)
     assert c.pages_crawled == 0
     assert list(dq) == []
 
 @pytest.mark.asyncio
+# Test case 2:
 async def test_fetch_and_process_skips_non_html():
     """
-    Test case 2: Ensures the crawler only processes pages with HTML content.
-    Here, we simulate a JSON response, which should be ignored.
+    Ensures the crawler only processes pages with HTML content.
+    Simulates a JSON response, which should be ignored.
     """
+    # Setup crawler and fake session
     c = Crawler("https://example.com")
     c.session = FakeSession(FakeResponse(status=200, content_type='application/json', body='{}'))
     from collections import deque
     dq = deque()
+    # Run fetch_and_process and check results
     await c.fetch_and_process("https://example.com", dq)
     assert c.pages_crawled == 0
     assert list(dq) == []
 
 @pytest.mark.asyncio
+# Test case 3:
 async def test_fetch_and_process_enqueues_links_and_counts_pages():
     """
-    Test case 3: Ensures the crawler correctly finds and adds valid links to the queue.
-    It also checks that it correctly counts the page.
+    Ensures the crawler correctly finds and adds valid links to the queue.
+    Also checks that it correctly counts the page.
     """
-    # A block of HTML with various types of links (valid, invalid, external, etc.)
+    # HTML with various types of links
     html = """
     <a href="/a"></a>
     <a href="https://example.com/b/"></a>
@@ -87,18 +94,19 @@ async def test_fetch_and_process_enqueues_links_and_counts_pages():
     c.session = FakeSession(FakeResponse(status=200, content_type='text/html', body=html))
     from collections import deque
     dq = deque()
+    # Run fetch_and_process and check results
     await c.fetch_and_process("https://example.com", dq)
     assert c.pages_crawled == 1
     assert set(dq) == {"https://example.com/a", "https://example.com/b", "https://example.com"}
 
 @pytest.mark.asyncio
+# Test case 4:
 async def test_start_uses_fake_client_and_closes_session(monkeypatch):
     """
-    Test case 4: Ensures the crawler's main 'start' function properly
-    initializes a session and, importantly, closes it when it's done.
-    'monkeypatch' is a powerful pytest feature to temporarily replace
-    parts of the code.
+    Ensures the crawler's main 'start' function properly initializes a session and closes it when done.
+    Uses monkeypatch to replace parts of the code for testing.
     """
+    # Track calls to fetch_and_process
     calls = {"count": 0}
 
     async def fake_fetch_and_process(self, url, queue=None):
@@ -118,9 +126,11 @@ async def test_start_uses_fake_client_and_closes_session(monkeypatch):
                 async def __aexit__(self, exc_type, exc, tb): return False
             return FakeHeadResponse()
 
+    # Monkeypatch aiohttp.ClientSession and Crawler.fetch_and_process
     monkeypatch.setattr(crawler_mod.aiohttp, "ClientSession", FakeClientSession)
     monkeypatch.setattr(crawler_mod.Crawler, "fetch_and_process", fake_fetch_and_process, raising=False)
 
+    # Run start and check session closed
     c = Crawler("https://example.com")
     await c.start()
     assert c.session.closed is True
