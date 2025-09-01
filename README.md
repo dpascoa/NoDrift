@@ -210,11 +210,11 @@ NoDrift/
 
 ### Tools & workflow
 - **IDE:** Visual Studio Code  
-  Extensions: Python; ran app & tests via integrated terminal.
+  - Extensions: Python; ran app & tests via integrated terminal.
 - **Primary libraries:** `aiohttp`, `beautifulsoup4`, `lxml` (parser), `pytest`, `flask`, `flask-cors`.
 - **Interactive AI usage:**  
-  Used ChatGPT, Grok (xAI), Gemini and Claude to brainstorm strategies, discuss trade‑offs (sync vs. async, malformed HTML handling), and suggest missing tests.  
-  Additionally used GitHub Copilot selectively near the end to scaffold a few **test cases** for the new UI/logging code. All AI suggestions were **reviewed, adapted, and validated** via tests before inclusion.
+  - Used ChatGPT, Grok (xAI), Gemini and Claude to brainstorm strategies, discuss trade‑offs (sync vs. async, malformed HTML handling), and suggest missing tests.  
+  - Additionally used GitHub Copilot selectively near the end to scaffold a few **test cases** for the new UI/logging code. All AI suggestions were **reviewed, adapted, and validated** via tests before inclusion.
 
 ### Key Learnings During Development
 
