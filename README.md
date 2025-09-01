@@ -241,7 +241,7 @@ While building the Web UI, I implemented logic to normalize different URL format
 - **Extensibility:** Add pluggable output formats (JSON, CSV, database), a configuration file and CLI flags for crawl depth/parallelism, and a more advanced multi-domain crawl controller with a dashboard view.
 - **Web UI enhancements:** Enable crawling **multiple domains in parallel** from the UI, provide a toggle to run the same crawl in both synchronous and asynchronous modes (with runtime comparison), and add AI/ML-powered content summarization for each page — from concise one-line overviews to more detailed summaries.
 - **Robustness:** Improve encoding detection, add retries with exponential backoff and jitter, and strengthen error handling for edge cases.
-- **CI/CD:** Set up GitHub Actions pipelines for linting, tests, and coverage reporting; split development dependencies into a dedicated `requirements-dev.txt` for cleaner project management.
+- **CI/CD:** Set up GitHub Actions pipelines for linting, tests, and coverage reporting; split development dependencies into a dedicated `requirements-dev.txt` for cleaner project management; and provide a ready-to-use Docker image published to Docker Hub or GitHub Container Registry, so users can download and run the crawler immediately without manual setup.
 
 ---
 
