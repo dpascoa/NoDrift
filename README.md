@@ -40,6 +40,15 @@ pytest
 
 ## 🚀 Quick start (CLI)
 
+
+0) **Clone the repository**
+```bash
+# Clone the repo
+git clone https://github.com/dpascoa/NoDrift.git
+# Navigate into the project directory
+cd NoDrift
+```
+
 1) **Create & activate a virtual environment**
 ```bash
 python -m venv .venv
